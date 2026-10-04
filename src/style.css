@@ -1,0 +1,497 @@
+:root {
+    color-scheme: dark;
+    color: #e4eafa;
+    background: #070b16;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(ellipse at 15% 0%, #16334b55, transparent 45%),
+        radial-gradient(ellipse at 90% 25%, #44266e44, transparent 40%),
+        #070b16;
+}
+
+#root {
+    width: min(100% - 32px, 960px);
+}
+
+a {
+    color: #8de8f3;
+}
+
+nav {
+    background: #101727;
+    border-color: #26334a;
+    box-shadow: 0 16px 48px #00000030;
+}
+
+nav::before {
+    color: #92edf4;
+}
+
+nav button {
+    color: #c8baff;
+    background: #28233f;
+}
+
+nav button:hover {
+    background: #382e59;
+}
+
+hr {
+    background: #253048;
+}
+
+h1,
+h2,
+h3 {
+    color: #f1f5ff;
+}
+
+form,
+article,
+li {
+    background: #101727;
+    border-color: #26334a;
+    box-shadow: 0 16px 48px #00000020;
+}
+
+input:not([type='radio']),
+textarea {
+    color: #edf3ff;
+    background: #090f1d;
+    border-color: #324058;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #8c9ab2;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #7de4ee;
+    outline: 3px solid #7de4ee20;
+}
+
+input[type='radio'] {
+    accent-color: #8de8f3;
+}
+
+button {
+    color: #081120;
+    background: #8de8f3;
+}
+
+button:hover {
+    background: #b1f4fa;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline-color: #8de8f3;
+}
+
+article small {
+    color: #9aabc4;
+    border-color: #26334a;
+}
+
+li span {
+    color: #bcaeff;
+}
+
+[role='alert'] {
+    color: #ffbfcb;
+    background: #361623;
+    border-color: #784050;
+}
+
+/* Login hero */
+
+.login-page {
+    display: grid;
+    gap: 24px;
+    padding-bottom: 40px;
+}
+
+.login-hero {
+    position: relative;
+    height: 340px;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid #36536c;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #12263c, #201a39);
+}
+
+.hero-art,
+.hero-shade {
+    position: absolute;
+    inset: 0;
+}
+
+.hero-shade {
+    pointer-events: none;
+    background: linear-gradient(90deg,
+            #070b16e8 0%,
+            #070b1670 55%,
+            transparent 100%);
+}
+
+.hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: 620px;
+    padding: 48px;
+    pointer-events: none;
+}
+
+.eyebrow {
+    display: block;
+    color: #9eecf2;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+}
+
+.hero-copy h1 {
+    margin: 20px 0 14px;
+    font-size: clamp(36px, 6vw, 60px);
+    line-height: 1.06;
+    letter-spacing: -2.5px;
+}
+
+.hero-copy h1 span {
+    color: #a5edf2;
+}
+
+.hero-copy p {
+    color: #d0dded;
+}
+
+.hero-hint {
+    position: absolute;
+    right: 20px;
+    bottom: 18px;
+    z-index: 1;
+    padding: 8px 12px;
+    color: #dceafa;
+    background: #070b16c9;
+    border: 1px solid #52647a;
+    border-radius: 999px;
+    font-size: 11px;
+    pointer-events: none;
+}
+
+/* Login form */
+.login-panel {
+    width: min(100%, 560px);
+    margin: 0 auto;
+    padding: 34px;
+    border-radius: 24px;
+}
+
+.login-heading {
+    margin-bottom: 28px;
+}
+
+.login-heading h2 {
+    margin: 12px 0 8px;
+    font-size: clamp(23px, 4vw, 30px);
+    letter-spacing: -1px;
+}
+
+.login-heading p {
+    margin: 0;
+    color: #a7b6ce;
+}
+
+.login-field {
+    margin-bottom: 20px;
+}
+
+.login-field label {
+    display: block;
+    margin: 0 0 9px;
+    color: #cbd7eb;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 80px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    transform: translateY(-50%);
+    padding: 8px 12px;
+    color: #a5edf2;
+    background: transparent;
+    font-size: 12px;
+}
+
+.password-toggle:hover {
+    color: white;
+    background: #23354a;
+}
+
+.login-submit {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 4px;
+    background: linear-gradient(110deg, #8de8f3, #b5a6ff);
+    box-shadow: 0 8px 26px #87d4ed15;
+}
+
+.login-submit:hover {
+    background: linear-gradient(110deg, #b1f4fa, #cbbfff);
+}
+
+.login-panel .login-footer {
+    margin: 22px 0 0;
+    color: #a7b6ce;
+    text-align: center;
+    font-size: 13px;
+}
+
+@media (max-width: 540px) {
+    .login-hero {
+        height: 300px;
+    }
+
+    .hero-copy {
+        padding: 30px 24px;
+    }
+
+    .hero-copy h1 {
+        letter-spacing: -1.5px;
+    }
+
+    .login-panel {
+        padding: 24px;
+    }
+}
+
+/* Restore base layout and controls */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+        'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+#root {
+    width: min(100% - 32px, 960px);
+    margin: 32px auto;
+}
+
+a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+p {
+    line-height: 1.7;
+}
+
+/* Navigation */
+
+nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 18px 24px;
+    border: 1px solid #26334a;
+    border-radius: 18px;
+}
+
+nav::before {
+    content: 'Joefriends';
+    margin-right: auto;
+    color: #92edf4;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+hr {
+    height: 1px;
+    margin: 26px 0;
+    border: 0;
+    background: #253048;
+}
+
+/* Inputs and buttons */
+input,
+textarea,
+button {
+    font: inherit;
+}
+
+input:not([type='radio']),
+textarea {
+    display: block;
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #324058;
+    border-radius: 10px;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+button {
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 3px solid #8de8f3;
+    outline-offset: 4px;
+}
+
+.password-field input {
+    padding-right: 80px;
+}
+
+.password-toggle {
+    padding: 8px 12px;
+}
+
+/* Feed and friends */
+form,
+article {
+    padding: 28px;
+    border: 1px solid #26334a;
+    border-radius: 20px;
+}
+
+article {
+    margin-bottom: 18px;
+    overflow-wrap: anywhere;
+}
+
+article p {
+    white-space: pre-wrap;
+}
+
+article small {
+    display: block;
+    padding-top: 14px;
+    border-top: 1px solid #26334a;
+}
+
+ul {
+    display: grid;
+    gap: 14px;
+    padding: 0;
+    list-style: none;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px 24px;
+    border: 1px solid #26334a;
+    border-radius: 14px;
+}
+
+@media (max-width: 540px) {
+    #root {
+        margin: 16px auto;
+    }
+
+    nav {
+        padding: 16px;
+    }
+
+    nav::before {
+        width: 100%;
+        margin-bottom: 6px;
+    }
+
+    form,
+    article {
+        padding: 20px;
+    }
+}
+
+/* Interactive artwork beside the Feed */
+.feed-veil {
+    position: fixed;
+    top: 32px;
+    bottom: 32px;
+
+    /* Leave room for the 960px centre column and gaps */
+    width: calc((100% - 960px) / 2 - 48px);
+
+    overflow: hidden;
+    border: 1px solid #294454;
+    border-radius: 24px;
+    background: #070b16;
+    box-shadow: 0 0 40px #8de8f308;
+}
+
+.feed-veil-left {
+    left: 24px;
+}
+
+.feed-veil-right {
+    right: 24px;
+    border-color: #403555;
+    box-shadow: 0 0 40px #b5a6ff08;
+}
+
+/* Decorative shading allows pointer interaction through */
+.feed-veil::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom,
+            #070b1630,
+            transparent 25%,
+            transparent 75%,
+            #070b1680);
+}
+
+/* Hide side artwork when there isn't enough space */
+@media (max-width: 1279px) {
+    .feed-veil {
+        display: none;
+    }
+}
