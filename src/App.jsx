@@ -5,19 +5,16 @@ import Login from './pages/login'
 import Feed from './pages/feed'
 import Friends from './pages/friends'
 
+const API_URL = 'https://joefriends-backend-sigma-mission-9.vercel.app'
+
+// eslint-disable-next-line react-refresh/only-export-components
 export const ENDPOINTS = {
-  // signup: `${API_URL}/signup`, // POST { email, password, username }
-  signup: 'http://localhost:3000/signup',
-  // login: `${API_URL}/login`, // POST { email, password } -> token
-  login: 'http://localhost:3000/login',
-  // posts: `${API_URL}/posts`, // GET public + friends' posts
-  posts: 'http://localhost:3000/posts',
-  // createPost: `${API_URL}/posts`, // POST { title, content, visibility } -> new post
-  createPost: 'http://localhost:3000/posts',
-  // users: `${API_URL}/users`, // GET all users
-  users: 'http://localhost:3000/users',
-  // friends: `${API_URL}/friends`, // POST { friend_id } -> follow a user
-  friends: 'http://localhost:3000/friends',
+  signup: `${API_URL}/signup`,
+  login: `${API_URL}/login`,
+  posts: `${API_URL}/posts`,
+  createPost: `${API_URL}/posts`,
+  users: `${API_URL}/users`,
+  friends: `${API_URL}/friends`,
 }
 
 function RequireAuth({ children }) {
