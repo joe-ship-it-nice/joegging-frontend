@@ -11,6 +11,31 @@ const PHOTO_EXTENSIONS = {
   'image/webp': 'webp',
 }
 
+function PostPhoto({ src, title }) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return <p>Photo could not load. Refresh the page to try again.</p>
+  }
+
+  return (
+    <img
+      src={src}
+      alt={`Running photo for: ${title}`}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      style={{
+        display: 'block',
+        width: '100%',
+        maxHeight: '500px',
+        objectFit: 'contain',
+        borderRadius: '8px',
+        margin: '18px 0',
+      }}
+    />
+  )
+}
+
 export default function Feed() {
   const { apiFetch } = useAuth()
 
@@ -382,18 +407,10 @@ export default function Feed() {
             </p>
 
             {post.image_url && (
-              <img
+              <PostPhoto
+                key={post.image_url}
                 src={post.image_url}
-                alt={`Running photo for: ${post.title}`}
-                loading="lazy"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  maxHeight: '500px',
-                  objectFit: 'contain',
-                  borderRadius: '8px',
-                  margin: '18px 0',
-                }}
+                title={post.title}
               />
             )}
 
