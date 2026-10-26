@@ -13,6 +13,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+
   const [authError, setAuthError] = useState(() => {
     const hashParams = new URLSearchParams(window.location.hash.slice(1))
     const queryParams = new URLSearchParams(window.location.search)
@@ -25,6 +26,7 @@ export function AuthProvider({ children }) {
   })
 
   useEffect(() => {
+    // Remove the token saved by the old Joefriends login system.
     localStorage.removeItem('token')
 
     const {
@@ -40,7 +42,9 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     setAuthError('')
 
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
+    const { error } = await supabase.auth.signOut({
+      scope: 'local',
+    })
 
     if (error) {
       setAuthError(error.message)
@@ -52,6 +56,7 @@ export function AuthProvider({ children }) {
 
   const apiFetch = useCallback(async (url, options = {}) => {
     const { data, error } = await supabase.auth.getSession()
+
     if (error) throw error
 
     const accessToken = data.session?.access_token
@@ -85,16 +90,21 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function login(email, password) {
+    setAuthError('')
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     })
 
     if (error) throw error
+
     setSession(data.session)
   }
 
   async function loginWithGoogle() {
+    setAuthError('')
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -111,7 +121,11 @@ export function AuthProvider({ children }) {
   async function signup(email, password, username) {
     return apiFetch(ENDPOINTS.signup, {
       method: 'POST',
-      body: JSON.stringify({ email, password, username }),
+      body: JSON.stringify({
+        email,
+        password,
+        username,
+      }),
     })
   }
 
