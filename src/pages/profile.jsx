@@ -3,7 +3,9 @@ import { useAuth } from '../context/login'
 import { ENDPOINTS } from '../App'
 
 export default function Profile() {
-    const { token } = useAuth()
+    const { apiFetch, user } = useAuth()
+    const userId = user?.id
+
     const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -17,23 +19,20 @@ export default function Profile() {
             setProfile(null)
 
             try {
-                const res = await fetch(ENDPOINTS.profile, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                if (!userId) {
+                    throw new Error('Please log in to view your profile.')
+                }
+
+                const data = await apiFetch(ENDPOINTS.profile, {
                     signal: controller.signal,
                 })
 
-                const data = await res.json()
-
-                if (!res.ok) {
-                    throw new Error(data.message || 'Could not load your profile.')
+                if (!controller.signal.aborted) {
+                    setProfile(data)
                 }
-
-                setProfile(data)
             } catch (err) {
                 if (!controller.signal.aborted) {
-                    setError(err.message)
+                    setError(err.message || 'Could not load your profile.')
                 }
             } finally {
                 if (!controller.signal.aborted) {
@@ -45,25 +44,44 @@ export default function Profile() {
         loadProfile()
 
         return () => controller.abort()
-    }, [token])
+    }, [apiFetch, userId])
 
-    if (loading) return <p>Loading your profile...</p>
-    if (error) return <p role="alert">{error}</p>
-    if (!profile) return <p>Profile not found.</p>
+    if (loading) {
+        return <p role="status">Loading your profile...</p>
+    }
+
+    if (error) {
+        return <p role="alert">{error}</p>
+    }
+
+    if (!profile) {
+        return <p>Profile not found.</p>
+    }
+
+    const joinedDate = profile.created_at
+        ? new Date(profile.created_at)
+        : null
+
+    const joinedLabel =
+        joinedDate && !Number.isNaN(joinedDate.getTime())
+            ? joinedDate.toLocaleDateString()
+            : 'Not available'
 
     return (
         <main>
             <h1>My Runner Profile</h1>
 
             <section className="profile-card">
-                <h2>{profile.username}</h2>
+                <h2>{profile.username || 'Runner'}</h2>
+
                 <p>
                     <strong>Email:</strong> {profile.email}
                 </p>
+
                 <p>
-                    <strong>Joined:</strong>{' '}
-                    {new Date(profile.created_at).toLocaleDateString()}
+                    <strong>Joined:</strong> {joinedLabel}
                 </p>
+
                 <p>Keep moving. Keep Joegging.</p>
             </section>
         </main>
