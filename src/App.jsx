@@ -4,8 +4,9 @@ import Signup from './pages/signup'
 import Login from './pages/login'
 import Feed from './pages/feed'
 import Friends from './pages/friends'
+import Profile from './pages/profile'
 
-const API_URL = 'https://joefriends-backend-sigma-mission-9.vercel.app'
+const API_URL = 'http://localhost:3000'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const ENDPOINTS = {
@@ -15,15 +16,18 @@ export const ENDPOINTS = {
   createPost: `${API_URL}/posts`,
   users: `${API_URL}/users`,
   friends: `${API_URL}/friends`,
+  profile: `${API_URL}/profile`,
 }
 
 function RequireAuth({ children }) {
-  const { token } = useAuth()
+  const { token, authLoading } = useAuth()
+  if (authLoading) return <p>Checking your session...</p>
   return token ? children : <Navigate to="/login" replace />
 }
 
 function GuestOnly({ children }) {
-  const { token } = useAuth()
+  const { token, authLoading } = useAuth()
+  if (authLoading) return <p>Checking your session...</p>
   return token ? <Navigate to="/feed" replace /> : children
 }
 
@@ -38,7 +42,9 @@ function Nav() {
   }
   return (
     <nav>
-      <Link to="/feed">Feed</Link> | <Link to="/friends">Friends</Link> |{' '}
+      <Link to="/feed">Feed</Link> |{' '}
+      <Link to="/friends">Friends</Link> |{' '}
+      <Link to="/profile">Profile</Link> |{' '}
       <button onClick={logout}>Log out</button>
     </nav>
   )
@@ -55,6 +61,7 @@ export default function App() {
           <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
           <Route path="/feed" element={<RequireAuth><Feed /></RequireAuth>} />
           <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/feed" replace />} />
         </Routes>
       </BrowserRouter>

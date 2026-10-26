@@ -1,23 +1,41 @@
-import DitherVeil from '../components/DitherVeil/DitherVeil'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/login'
 import { ENDPOINTS } from '../App'
+
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024
+
+const PHOTO_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
 
 export default function Feed() {
   const { apiFetch } = useAuth()
 
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [feedError, setFeedError] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [visibility, setVisibility] = useState('')
+  const [photo, setPhoto] = useState(null)
+
   const [posting, setPosting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const photoInputRef = useRef(null)
+  const uploadedPhotoRef = useRef(null)
+  const postingRef = useRef(false)
 
   async function loadPosts() {
     const data = await apiFetch(ENDPOINTS.posts)
     setPosts(Array.isArray(data) ? data : data.posts || [])
+    setFeedError('')
   }
 
   useEffect(() => {
@@ -27,10 +45,13 @@ export default function Feed() {
       .then((data) => {
         if (!ignore) {
           setPosts(Array.isArray(data) ? data : data.posts || [])
+          setFeedError('')
         }
       })
       .catch((err) => {
-        if (!ignore) setError(err.message)
+        if (!ignore) {
+          setFeedError(err.message || 'Unable to load posts.')
+        }
       })
       .finally(() => {
         if (!ignore) setLoading(false)
@@ -41,111 +62,239 @@ export default function Feed() {
     }
   }, [apiFetch])
 
-  async function handlePost(e) {
-    e.preventDefault()
-    if (posting) return
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
 
     setError('')
+    setSuccess('')
+    setPhoto(null)
+    uploadedPhotoRef.current = null
 
-    if (!title.trim()) return setError('Add a title')
-    if (!content.trim()) return setError('Write something first')
-    if (!visibility) return setError('Choose Public or Friends only')
+    if (!file) return
 
+    if (!PHOTO_EXTENSIONS[file.type]) {
+      setError('Choose a JPG, PNG, or WebP image.')
+      e.target.value = ''
+      return
+    }
+
+    if (file.size === 0 || file.size > MAX_PHOTO_SIZE) {
+      setError('Choose a non-empty image no larger than 5 MB.')
+      e.target.value = ''
+      return
+    }
+
+    setPhoto(file)
+  }
+
+  async function handlePost(e) {
+    e.preventDefault()
+    if (postingRef.current) return
+
+    setError('')
+    setSuccess('')
+
+    if (!title.trim()) return setError('Add a title.')
+    if (!content.trim()) return setError('Write something first.')
+
+    if (visibility !== 'public' && visibility !== 'friends') {
+      return setError('Choose Public or Friends only.')
+    }
+
+    postingRef.current = true
     setPosting(true)
 
+    let savingPost = false
+
     try {
+      const { data, error: sessionError } =
+        await supabase.auth.getSession()
+
+      if (sessionError) throw sessionError
+
+      const currentUser = data.session?.user
+
+      if (!currentUser) {
+        throw new Error('Please log in again before posting.')
+      }
+
+      let imagePath = null
+
+      if (photo) {
+        const previousUpload = uploadedPhotoRef.current
+
+        // Reuse an uploaded photo if saving the post previously failed.
+        if (
+          previousUpload?.file === photo &&
+          previousUpload?.userId === currentUser.id
+        ) {
+          imagePath = previousUpload.path
+        } else {
+          const extension = PHOTO_EXTENSIONS[photo.type]
+
+          if (
+            !extension ||
+            photo.size === 0 ||
+            photo.size > MAX_PHOTO_SIZE
+          ) {
+            throw new Error(
+              'Choose a non-empty JPG, PNG, or WebP image up to 5 MB.'
+            )
+          }
+
+          imagePath =
+            `${currentUser.id}/${crypto.randomUUID()}.${extension}`
+
+          setUploading(true)
+
+          const { error: uploadError } = await supabase.storage
+            .from('running-photos')
+            .upload(imagePath, photo, {
+              contentType: photo.type,
+              upsert: false,
+            })
+
+          setUploading(false)
+
+          if (uploadError) throw uploadError
+
+          uploadedPhotoRef.current = {
+            file: photo,
+            userId: currentUser.id,
+            path: imagePath,
+          }
+        }
+      }
+
+      savingPost = true
+
       await apiFetch(ENDPOINTS.createPost, {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
           visibility,
+          image_path: imagePath,
         }),
       })
+
+      savingPost = false
 
       setTitle('')
       setContent('')
       setVisibility('')
+      setPhoto(null)
+      uploadedPhotoRef.current = null
+
+      if (photoInputRef.current) {
+        photoInputRef.current.value = ''
+      }
+
+      setSuccess('Your post has been shared with the club.')
 
       try {
         await loadPosts()
       } catch {
-        setError('Your post was saved, but the feed could not refresh. Reload the page.')
+        setFeedError(
+          'Your post was saved, but the feed could not refresh. Reload the page.'
+        )
       }
     } catch (err) {
-      setError(err.message)
+      const message = err.message || 'Something went wrong.'
+
+      setError(
+        savingPost
+          ? `${message} Check the feed before retrying in case the post was saved.`
+          : message
+      )
     } finally {
+      setUploading(false)
       setPosting(false)
+      postingRef.current = false
     }
   }
 
   return (
-    <div className="feed-page">
-      {/* Left interactive panel */}
-      <div className="feed-veil feed-veil-left" aria-hidden="true">
-        <DitherVeil
-          fit="cover"
-          pattern="bayer"
-          pixelSize={3}
-          levels={3}
-          inkColor="#070b16"
-          paperColor="#8de8f3"
-          revealRadius={130}
-          softness={0.65}
-          linger={1.2}
-          rimColor="#8de8f3"
-          rim={0.3}
-          clickBurst
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
+    <main className="feed-page feed-page-video">
+      <video
+        className="feed-background-video"
+        src="/videos/running-track.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-hidden="true"
+      />
 
-      {/* Right interactive panel */}
-      <div className="feed-veil feed-veil-right" aria-hidden="true">
-        <DitherVeil
-          fit="cover"
-          pattern="bayer"
-          pixelSize={3}
-          levels={3}
-          inkColor="#070b16"
-          paperColor="#b5a6ff"
-          revealRadius={130}
-          softness={0.65}
-          linger={1.2}
-          rimColor="#b5a6ff"
-          rim={0.3}
-          clickBurst
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
+      <div className="feed-background-overlay" aria-hidden="true" />
 
-      <h1>Feed</h1>
+      <button
+        className="feed-video-toggle"
+        type="button"
+        onClick={(e) => {
+          const video = e.currentTarget.parentElement.querySelector('video')
 
-      <form onSubmit={handlePost}>
+          if (video.paused) {
+            video.play().catch(() => { })
+          } else {
+            video.pause()
+          }
+        }}
+      >
+        Play / pause background
+      </button>
+      <header className="feed-heading">
+        <span className="eyebrow">
+          JOEGGING / THE RUNNING CLUB
+        </span>
+
+        <h1>
+          Every pace.
+          <br />
+          A place.
+        </h1>
+
         <p>
+          Share your miles, find your gang, celebrate every finish.
+        </p>
+      </header>
+
+      <form onSubmit={handlePost} aria-labelledby="create-post-title">
+        <h2 id="create-post-title">Share your run.</h2>
+        <p>A training tip, a favourite route, or a small victory.</p>
+
+        <p>
+          <label htmlFor="post-title">Title</label>
           <input
-            aria-label="Post title"
-            placeholder="Title"
+            id="post-title"
+            name="title"
+            placeholder="Give your run a title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={200}
+            disabled={posting}
             required
           />
         </p>
 
         <p>
+          <label htmlFor="post-content">Your story</label>
           <textarea
-            aria-label="Post content"
-            placeholder="What's on your mind?"
+            id="post-content"
+            name="content"
+            placeholder="How was your run? Share it with the club."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={3}
+            rows={4}
             maxLength={5000}
+            disabled={posting}
             required
           />
         </p>
 
-        <p>
+        <div role="group" aria-labelledby="visibility-label">
+          <p id="visibility-label">Who can see your post?</p>
+
           <label>
             <input
               type="radio"
@@ -153,52 +302,122 @@ export default function Feed() {
               value="public"
               checked={visibility === 'public'}
               onChange={(e) => setVisibility(e.target.value)}
+              disabled={posting}
               required
             />{' '}
             Public
-          </label>{' '}
+          </label>
 
-          <label>
+          {' '}
+
+          <label style={{ marginLeft: '16px' }}>
             <input
               type="radio"
               name="visibility"
               value="friends"
               checked={visibility === 'friends'}
               onChange={(e) => setVisibility(e.target.value)}
+              disabled={posting}
             />{' '}
             Friends only
           </label>
-        </p>
+        </div>
+
+        <div className="photo-field">
+          <label htmlFor="post-photo">
+            Running photo (optional)
+          </label>
+
+          <input
+            ref={photoInputRef}
+            id="post-photo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handlePhotoChange}
+            disabled={posting}
+            aria-describedby="photo-help"
+          />
+
+          <small id="photo-help">
+            JPG, PNG, or WebP. Maximum 5 MB.
+          </small>
+
+          {photo && <p>Selected: {photo.name}</p>}
+        </div>
+
+        {error && <p role="alert">{error}</p>}
 
         <button type="submit" disabled={posting}>
-          {posting ? 'Posting...' : 'Post'}
+          {uploading
+            ? 'Uploading photo...'
+            : posting
+              ? 'Saving post...'
+              : 'Share with the club →'}
         </button>
-      </form>
 
-      {error && <p role="alert">{error}</p>}
+        {success && <p role="status">{success}</p>}
+      </form>
 
       <hr />
 
-      {loading && <p role="status">Loading posts...</p>}
+      <section aria-labelledby="club-feed-title">
+        <h2 id="club-feed-title">From the club.</h2>
 
-      {!loading && !error && posts.length === 0 && (
-        <p>No posts yet. Start the conversation!</p>
-      )}
+        {loading && <p role="status">Loading posts...</p>}
 
-      {posts.map((post) => (
-        <article key={post.id}>
-          <h3>{post.title}</h3>
-          <p>{post.content}</p>
+        {feedError && <p role="alert">{feedError}</p>}
 
-          <small>
-            {post.author}
-            {' · '}
-            {post.visibility === 'friends' ? 'Friends only' : 'Public'}
-            {post.created_at &&
-              ` · ${new Date(post.created_at).toLocaleString()}`}
-          </small>
-        </article>
-      ))}
-    </div>
+        {!loading && !feedError && posts.length === 0 && (
+          <p>
+            No running posts yet. Be the first to share your Joegging journey!
+          </p>
+        )}
+
+        {posts.map((post) => (
+          <article key={post.id}>
+            <h3>{post.title}</h3>
+
+            <p style={{ whiteSpace: 'pre-wrap' }}>
+              {post.content}
+            </p>
+
+            {post.image_url && (
+              <img
+                src={post.image_url}
+                alt={`Running photo for: ${post.title}`}
+                loading="lazy"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  maxHeight: '500px',
+                  objectFit: 'contain',
+                  borderRadius: '8px',
+                  margin: '18px 0',
+                }}
+              />
+            )}
+
+            {post.image_unavailable && (
+              <p>This post’s photo is temporarily unavailable.</p>
+            )}
+
+            <small>
+              {post.author || 'Runner'}
+              {' · '}
+              {post.visibility === 'friends' ? 'Friends only' : 'Public'}
+
+              {post.created_at && (
+                <>
+                  {' · '}
+                  <time dateTime={post.created_at}>
+                    {new Date(post.created_at).toLocaleString()}
+                  </time>
+                </>
+              )}
+            </small>
+          </article>
+        ))}
+      </section>
+    </main>
   )
 }
