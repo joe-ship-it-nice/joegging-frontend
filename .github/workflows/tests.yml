@@ -1,0 +1,77 @@
+name: Joegging tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: joegging-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    # Repository secrets are unavailable to pull requests from forks.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: JOEGGING-frontend
+
+    env:
+      CI: "true"
+      VITE_API_URL: http://localhost:3000
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+    steps:
+      - name: Download frontend
+        uses: actions/checkout@v6
+        with:
+          path: JOEGGING-frontend
+          persist-credentials: false
+
+      - name: Download backend
+        uses: actions/checkout@v6
+        with:
+          repository: joe-ship-it-nice/joegging-backend
+          ref: main
+          path: JOEGGING-backend
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            JOEGGING-frontend/package-lock.json
+            JOEGGING-backend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: JOEGGING-backend
+        run: npm ci
+
+      - name: Check code quality
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:e2e

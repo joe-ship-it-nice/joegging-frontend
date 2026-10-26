@@ -6,7 +6,9 @@ import Feed from './pages/feed'
 import Friends from './pages/friends'
 import Profile from './pages/profile'
 
-const API_URL = 'http://localhost:3000'
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:3000'
+).replace(/\/+$/, '')
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const ENDPOINTS = {
