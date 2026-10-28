@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/login'
 import { ENDPOINTS } from '../App'
 
@@ -11,27 +11,24 @@ export default function Friends() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  async function loadFriends() {
-    const usersData = await apiFetch(ENDPOINTS.users)
-    const friendsData = await apiFetch(ENDPOINTS.friends)
+  const loadFriends = useCallback(async (shouldIgnore = () => false) => {
+    const [usersData, friendsData] = await Promise.all([
+      apiFetch(ENDPOINTS.users),
+      apiFetch(ENDPOINTS.friends),
+    ])
+
+    if (shouldIgnore()) return
 
     setUsers(usersData)
     setFriendships(friendsData)
-  }
+  }, [apiFetch])
 
   useEffect(() => {
     let ignore = false
 
-    Promise.all([
-      apiFetch(ENDPOINTS.users),
-      apiFetch(ENDPOINTS.friends),
-    ])
-      .then(([usersData, friendsData]) => {
-        if (ignore) return
-
-        setUsers(usersData)
-        setFriendships(friendsData)
-      })
+    // loadFriends updates state only after awaiting the API requests.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadFriends(() => ignore)
       .catch((err) => {
         if (!ignore) setError(err.message)
       })
@@ -42,7 +39,7 @@ export default function Friends() {
     return () => {
       ignore = true
     }
-  }, [apiFetch])
+  }, [loadFriends])
 
   async function sendRequest(userId) {
     setError('')
@@ -117,14 +114,14 @@ export default function Friends() {
 
   return (
     <div>
-      <h1>Joefriends</h1>
-      <p>Find people and manage your friend requests.</p>
+      <h1>Joegging Friends</h1>
+      <p>Find joeggers and manage your friend requests.</p>
 
       {error && <p role="alert">{error}</p>}
       {loading && <p>Loading friends...</p>}
 
       {!loading && !error && users.length === 0 && (
-        <p>No other users yet.</p>
+        <p>No other joeggers yet.</p>
       )}
 
       <ul>
